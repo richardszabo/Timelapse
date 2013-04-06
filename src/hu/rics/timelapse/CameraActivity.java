@@ -197,7 +197,7 @@ public class CameraActivity extends Activity {
         // Step 5: Set the preview output
         mMediaRecorder.setPreviewDisplay(mPreview.getHolder().getSurface());
         
-        mMediaRecorder.setCaptureRate(1);
+        mMediaRecorder.setCaptureRate(5);
 
         Log.d(TAG, "prep6");
         // Step 6: Prepare configured MediaRecorder

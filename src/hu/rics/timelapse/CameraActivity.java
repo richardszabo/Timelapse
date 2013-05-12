@@ -31,6 +31,7 @@ public class CameraActivity extends Activity {
     private MediaRecorder mMediaRecorder;
     private boolean isRecording = false;
     Button captureButton;
+    final public static int FRAMERATE = 5;
 
     /** Called when the activity is first created. */
     @Override
@@ -197,7 +198,7 @@ public class CameraActivity extends Activity {
         // Step 5: Set the preview output
         mMediaRecorder.setPreviewDisplay(mPreview.getHolder().getSurface());
         
-        mMediaRecorder.setCaptureRate(5);
+        mMediaRecorder.setCaptureRate(FRAMERATE);
 
         Log.d(TAG, "prep6");
         // Step 6: Prepare configured MediaRecorder

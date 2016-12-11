@@ -75,35 +75,39 @@ public class CameraActivity extends Activity {
         captureButton.setOnClickListener(
                 new View.OnClickListener() {
 
-                    /*
-                    // taking pictures
                     @Override
                     public void onClick(View v) {
-                    // get an image from the camera
-                    mCamera.takePicture(null, null, mPicture);
-                    }*/
-                    @Override
-                    public void onClick(View v) {
+                        Log.d(TAG, "click1");
                         if (isRecording) {
+                            Log.d(TAG, "click1");
                             // stop recording and release camera
                             mMediaRecorder.stop();  // stop the recording
+                            Log.d(TAG, "click2");
                             releaseMediaRecorder(); // release the MediaRecorder object
+                            Log.d(TAG, "click3");
                             mCamera.lock();         // take camera access back from MediaRecorder
 
+                            Log.d(TAG, "click4");
                             // inform the user that recording has stopped
-                            captureButton.setText("C android AIDE 33");
+                            //captureButton.setText("Start");
+                            Log.d(TAG, "click5");
                             isRecording = false;
                         } else {
+                            Log.d(TAG, "click6");
                             // initialize video camera
                             if (prepareVideoRecorder()) {
                                 // Camera is available and unlocked, MediaRecorder is prepared,
                                 // now you can start recording
+                                Log.d(TAG, "click7");
                                 mMediaRecorder.start();
 
                                 // inform the user that recording has started
-                                captureButton.setText("Stop");
+                                Log.d(TAG, "click8");
+                                //captureButton.setText("Stop");
+                                Log.d(TAG, "click9");
                                 isRecording = true;
                             } else {
+                                Log.d(TAG, "click10");
                                 // prepare didn't work, release the camera
                                 releaseMediaRecorder();
                                 // inform user
@@ -168,6 +172,12 @@ public class CameraActivity extends Activity {
         mMediaRecorder = new MediaRecorder();
 
         Log.d(TAG, "prep1:" + mCamera +":");
+        CamcorderProfile profile = CamcorderProfile.get(CamcorderProfile.QUALITY_HIGH );
+        //http://stackoverflow.com/a/16543157/21047
+        Camera.Parameters parameters = mCamera.getParameters();
+        parameters.setPreviewSize(profile.videoFrameWidth,profile.videoFrameHeight);
+        mCamera.setParameters(parameters);
+        
         // Step 1: Unlock and set camera to MediaRecorder
         mCamera.unlock();
         Log.d(TAG, "prep1.1");
@@ -180,14 +190,25 @@ public class CameraActivity extends Activity {
 
         Log.d(TAG, "prep3");
         // Step 3: Set a CamcorderProfile (requires API Level 8 or higher)
-        for(int i =0; i < 6; ++i) {
-           Log.d(TAG, "profile (" + i +")" + profileToString(CamcorderProfile.get(i)));
-           Log.d(TAG, "profile (" + (i+1000) +")" + profileToString(CamcorderProfile.get(i+1000)));
+        for(int i =0; i < 8; ++i) {
+           if(CamcorderProfile.hasProfile(i) ) {	
+        	   Log.d(TAG, "profile (" + i +")" + profileToString(CamcorderProfile.get(i)));
+           } else {
+        	   Log.d(TAG, "profile (" + i +") missing");           
+           }
+           if(CamcorderProfile.hasProfile(i+1000) ) {	
+               Log.d(TAG, "profile (" + (i+1000) +")" + profileToString(CamcorderProfile.get(i+1000)));
+           } else {
+        	   Log.d(TAG, "profile (" + (i+1000) +") missing");           
+           }
         }
+        Log.d(TAG, "prep3.1");
+        Log.d(TAG,"has:" + CamcorderProfile.hasProfile(CamcorderProfile.QUALITY_HIGH ));
         //mMediaRecorder.setProfile(CamcorderProfile.get(CamcorderProfile.QUALITY_HIGH));
-        mMediaRecorder.setProfile(CamcorderProfile.get(CamcorderProfile.QUALITY_TIME_LAPSE_720P ));
-        mMediaRecorder.setAudioEncoder(MediaRecorder.AudioEncoder.DEFAULT);
-
+        //mMediaRecorder.setProfile(CamcorderProfile.get(CamcorderProfile.QUALITY_TIME_LAPSE_720P ));
+        mMediaRecorder.setProfile(profile);
+        Log.d(TAG, "prep3.2");
+        //mMediaRecorder.setAudioEncoder(MediaRecorder.AudioEncoder.DEFAULT);
         
         Log.d(TAG, "prep4:" + getOutputMediaFile(MEDIA_TYPE_VIDEO).toString() +":");
         // Step 4: Set output file
@@ -195,10 +216,12 @@ public class CameraActivity extends Activity {
         //mMediaRecorder.setOutputFormat(MediaRecorder.OutputFormat.MPEG_4);
 
         Log.d(TAG, "prep5");
+        
         // Step 5: Set the preview output
         mMediaRecorder.setPreviewDisplay(mPreview.getHolder().getSurface());
         
-        mMediaRecorder.setCaptureRate(FRAMERATE);
+        //mMediaRecorder.setCaptureRate(FRAMERATE);
+        //mMediaRecorder.setVideoFrameRate(FRAMERATE);
 
         Log.d(TAG, "prep6");
         // Step 6: Prepare configured MediaRecorder

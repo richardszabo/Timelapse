@@ -31,7 +31,7 @@ public class CameraActivity extends Activity {
     private MediaRecorder mMediaRecorder;
     private boolean isRecording = false;
     Button captureButton;
-    final public static int FRAMERATE = 5;
+    final public static int FRAMERATE = 1;
 
     /** Called when the activity is first created. */
     @Override
@@ -166,37 +166,14 @@ public class CameraActivity extends Activity {
         
         // Step 1: Unlock and set camera to MediaRecorder
         mCamera.unlock();
-        Log.d(TAG, "prep1.1");
         mMediaRecorder.setCamera(mCamera);
 
         Log.d(TAG, "prep2");
         // Step 2: Set sources
         mMediaRecorder.setAudioSource(MediaRecorder.AudioSource.CAMCORDER);
         mMediaRecorder.setVideoSource(MediaRecorder.VideoSource.CAMERA);
-
-        Log.d(TAG, "prep3");
-        // Step 3: Set a CamcorderProfile (requires API Level 8 or higher)
-        for(int i =0; i < 8; ++i) {
-           if(CamcorderProfile.hasProfile(i) ) {	
-        	   Log.d(TAG, "profile (" + i +")" + profileToString(CamcorderProfile.get(i)));
-           } else {
-        	   Log.d(TAG, "profile (" + i +") missing");           
-           }
-           if(CamcorderProfile.hasProfile(i+1000) ) {	
-               Log.d(TAG, "profile (" + (i+1000) +")" + profileToString(CamcorderProfile.get(i+1000)));
-           } else {
-        	   Log.d(TAG, "profile (" + (i+1000) +") missing");           
-           }
-        }
-        Log.d(TAG, "prep3.1");
-        Log.d(TAG,"has:" + CamcorderProfile.hasProfile(CamcorderProfile.QUALITY_HIGH ));
-        //mMediaRecorder.setProfile(CamcorderProfile.get(CamcorderProfile.QUALITY_HIGH));
-        //mMediaRecorder.setProfile(CamcorderProfile.get(CamcorderProfile.QUALITY_TIME_LAPSE_720P ));
         mMediaRecorder.setProfile(profile);
-        Log.d(TAG, "prep3.2");
         mMediaRecorder.setAudioEncoder(MediaRecorder.AudioEncoder.DEFAULT);
-        
-        Log.d(TAG, "prep4:" + getOutputMediaFile(MEDIA_TYPE_VIDEO).toString() +":");
         // Step 4: Set output file
         mMediaRecorder.setOutputFile(getOutputMediaFile(MEDIA_TYPE_VIDEO).toString());
         //mMediaRecorder.setOutputFormat(MediaRecorder.OutputFormat.MPEG_4);

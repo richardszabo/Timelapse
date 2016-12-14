@@ -77,37 +77,26 @@ public class CameraActivity extends Activity {
 
                     @Override
                     public void onClick(View v) {
-                        Log.d(TAG, "click1");
                         if (isRecording) {
-                            Log.d(TAG, "click1");
                             // stop recording and release camera
                             mMediaRecorder.stop();  // stop the recording
-                            Log.d(TAG, "click2");
                             releaseMediaRecorder(); // release the MediaRecorder object
-                            Log.d(TAG, "click3");
                             mCamera.lock();         // take camera access back from MediaRecorder
 
-                            Log.d(TAG, "click4");
                             // inform the user that recording has stopped
-                            //captureButton.setText("Start");
-                            Log.d(TAG, "click5");
+                            captureButton.setText("Start");
                             isRecording = false;
                         } else {
-                            Log.d(TAG, "click6");
                             // initialize video camera
                             if (prepareVideoRecorder()) {
                                 // Camera is available and unlocked, MediaRecorder is prepared,
                                 // now you can start recording
-                                Log.d(TAG, "click7");
                                 mMediaRecorder.start();
 
                                 // inform the user that recording has started
-                                Log.d(TAG, "click8");
-                                //captureButton.setText("Stop");
-                                Log.d(TAG, "click9");
+                                captureButton.setText("Stop");
                                 isRecording = true;
                             } else {
-                                Log.d(TAG, "click10");
                                 // prepare didn't work, release the camera
                                 releaseMediaRecorder();
                                 // inform user
@@ -166,13 +155,10 @@ public class CameraActivity extends Activity {
 
     private boolean prepareVideoRecorder() {
 
-        Log.d(TAG, "prep0");
-        
-        //mCamera = getCameraInstance(); // does not need, already got the instance
         mMediaRecorder = new MediaRecorder();
 
         Log.d(TAG, "prep1:" + mCamera +":");
-        CamcorderProfile profile = CamcorderProfile.get(CamcorderProfile.QUALITY_HIGH );
+        CamcorderProfile profile = CamcorderProfile.get(CamcorderProfile.QUALITY_TIME_LAPSE_720P );
         //http://stackoverflow.com/a/16543157/21047
         Camera.Parameters parameters = mCamera.getParameters();
         parameters.setPreviewSize(profile.videoFrameWidth,profile.videoFrameHeight);
@@ -208,7 +194,7 @@ public class CameraActivity extends Activity {
         //mMediaRecorder.setProfile(CamcorderProfile.get(CamcorderProfile.QUALITY_TIME_LAPSE_720P ));
         mMediaRecorder.setProfile(profile);
         Log.d(TAG, "prep3.2");
-        //mMediaRecorder.setAudioEncoder(MediaRecorder.AudioEncoder.DEFAULT);
+        mMediaRecorder.setAudioEncoder(MediaRecorder.AudioEncoder.DEFAULT);
         
         Log.d(TAG, "prep4:" + getOutputMediaFile(MEDIA_TYPE_VIDEO).toString() +":");
         // Step 4: Set output file
@@ -219,8 +205,13 @@ public class CameraActivity extends Activity {
         
         // Step 5: Set the preview output
         mMediaRecorder.setPreviewDisplay(mPreview.getHolder().getSurface());
-        
-        //mMediaRecorder.setCaptureRate(FRAMERATE);
+
+        int fpsRange[] = new int[2];
+
+        parameters.getPreviewFpsRange(fpsRange);
+        Log.d(TAG, "getPreviewFpsRange:" + fpsRange[0] + "-" + fpsRange[1]);
+
+        mMediaRecorder.setCaptureRate(FRAMERATE);
         //mMediaRecorder.setVideoFrameRate(FRAMERATE);
 
         Log.d(TAG, "prep6");

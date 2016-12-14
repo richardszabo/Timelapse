@@ -47,7 +47,8 @@ public class CameraPreview extends SurfaceView implements SurfaceHolder.Callback
     public void surfaceChanged(SurfaceHolder holder, int format, int w, int h) {
         // If your preview can change or rotate, take care of those events here.
         // Make sure to stop the preview before resizing or reformatting it.
-    	
+
+        Log.d(TAG,"--------------------------------surfaceChanged:" + w + ":" + h);
 
         if (mHolder.getSurface() == null){
           // preview surface does not exist
@@ -67,7 +68,7 @@ public class CameraPreview extends SurfaceView implements SurfaceHolder.Callback
         // start preview with new settings
         try {
             mCamera.setPreviewDisplay(mHolder);
-        	mCamera.setDisplayOrientation(180);
+        	//mCamera.setDisplayOrientation(180);
 
             mCamera.startPreview();
 

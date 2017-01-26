@@ -10,13 +10,16 @@ import android.os.Environment;
 import android.util.Log;
 import android.view.View;
 import android.widget.Button;
+import android.widget.EditText;
 import android.widget.FrameLayout;
+import android.widget.TextView;
+import android.widget.Toast;
+
 import java.io.File;
-import java.io.FileNotFoundException;
-import java.io.FileOutputStream;
 import java.io.IOException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
+
 
 
 /**
@@ -31,7 +34,8 @@ public class CameraActivity extends Activity {
     private MediaRecorder mMediaRecorder;
     private boolean isRecording = false;
     Button captureButton;
-    final public static int FRAMERATE = 1;
+    final public static double DEFAULT_FRAME_RATE = 1;
+    private double frameRate;
 
     /** Called when the activity is first created. */
     @Override
@@ -48,29 +52,10 @@ public class CameraActivity extends Activity {
         preview.addView(mPreview);
         // Add a listener to the Capture button
         captureButton = (Button) findViewById(R.id.button_capture);
-
-        final PictureCallback mPicture = new PictureCallback() {
-
-            @Override
-            public void onPictureTaken(byte[] data, Camera camera) {
-
-                File pictureFile = getOutputMediaFile(MEDIA_TYPE_IMAGE);
-                if (pictureFile == null) {
-                    Log.d(TAG, "Error creating media file, check storage permissions");
-                    return;
-                }
-
-                try {
-                    FileOutputStream fos = new FileOutputStream(pictureFile);
-                    fos.write(data);
-                    fos.close();
-                } catch (FileNotFoundException e) {
-                    Log.d(TAG, "File not found: " + e.getMessage());
-                } catch (IOException e) {
-                    Log.d(TAG, "Error accessing file: " + e.getMessage());
-                }
-            }
-        };
+        final TextView maxFrameSecTextView = (TextView) findViewById(R.id.max2FrameSecTextView);
+        maxFrameSecTextView.setText(Integer.toString(getMaxCaptureRate(mCamera)));
+        final EditText actualFrameSecEditText = (EditText) findViewById(R.id.actualFrameSecEditText);
+        actualFrameSecEditText.setText(Double.toString(DEFAULT_FRAME_RATE));
 
         captureButton.setOnClickListener(
                 new View.OnClickListener() {
@@ -87,8 +72,16 @@ public class CameraActivity extends Activity {
                             captureButton.setText("Start");
                             isRecording = false;
                         } else {
+                            try {
+                                frameRate = Double.valueOf(actualFrameSecEditText.getText().toString());
+                            } catch(NumberFormatException e) {
+                                Log.e(TAG, "Invalid frame/sec.");
+                                Toast toast = Toast.makeText(getApplicationContext(), "Invalid frame/sec.", Toast.LENGTH_SHORT);
+                                toast.show();
+                                return;
+                            }
                             // initialize video camera
-                            if (prepareVideoRecorder()) {
+                            if (prepareVideoRecorder(frameRate)) {
                                 // Camera is available and unlocked, MediaRecorder is prepared,
                                 // now you can start recording
                                 mMediaRecorder.start();
@@ -117,43 +110,35 @@ public class CameraActivity extends Activity {
         }
         return c; // returns null if camera is unavailable
     }
-    public static final int MEDIA_TYPE_IMAGE = 1;
-    public static final int MEDIA_TYPE_VIDEO = 2;
 
-    private static File getOutputMediaFile(int type) {
-        // To be safe, you should check that the SDCard is mounted
-        // using Environment.getExternalStorageState() before doing this.
+    private File getOutputMediaFile() {
 
-        File mediaStorageDir = new File(Environment.getExternalStoragePublicDirectory(
-                Environment.DIRECTORY_PICTURES), "MyCameraApp");
-        // This location works best if you want the created images to be shared
-        // between applications and persist after your app has been uninstalled.
-
+        File mediaStorageDir = getExternalFilesDir(Environment.DIRECTORY_MOVIES);
         // Create the storage directory if it does not exist
         if (!mediaStorageDir.exists()) {
             if (!mediaStorageDir.mkdirs()) {
-                Log.d("MyCameraApp", "failed to create directory");
+                Log.d(TAG, "failed to create directory");
                 return null;
             }
         }
 
         // Create a media file name
         String timeStamp = new SimpleDateFormat("yyyyMMdd_HHmmss").format(new Date());
-        File mediaFile;
-        if (type == MEDIA_TYPE_IMAGE) {
-            mediaFile = new File(mediaStorageDir.getPath() + File.separator
-                    + "IMG_" + timeStamp + ".jpg");
-        } else if (type == MEDIA_TYPE_VIDEO) {
-            mediaFile = new File(mediaStorageDir.getPath() + File.separator
+        File mediaFile = new File(mediaStorageDir.getPath() + File.separator
                     + "VID_" + timeStamp + ".mp4");
-        } else {
-            return null;
-        }
 
         return mediaFile;
     }
 
-    private boolean prepareVideoRecorder() {
+    private int getMaxCaptureRate(Camera camera) {
+        Camera.Parameters parameters = camera.getParameters();
+        int fpsRange[] = new int[2];
+
+        parameters.getPreviewFpsRange(fpsRange);
+        return fpsRange[Camera.Parameters.PREVIEW_FPS_MAX_INDEX]/1000;
+    }
+
+    private boolean prepareVideoRecorder(double frameRate) {
 
         mMediaRecorder = new MediaRecorder();
 
@@ -175,7 +160,7 @@ public class CameraActivity extends Activity {
         mMediaRecorder.setProfile(profile);
         mMediaRecorder.setAudioEncoder(MediaRecorder.AudioEncoder.DEFAULT);
         // Step 4: Set output file
-        mMediaRecorder.setOutputFile(getOutputMediaFile(MEDIA_TYPE_VIDEO).toString());
+        mMediaRecorder.setOutputFile(getOutputMediaFile().toString());
         //mMediaRecorder.setOutputFormat(MediaRecorder.OutputFormat.MPEG_4);
 
         Log.d(TAG, "prep5");
@@ -186,21 +171,21 @@ public class CameraActivity extends Activity {
         int fpsRange[] = new int[2];
 
         parameters.getPreviewFpsRange(fpsRange);
-        Log.d(TAG, "getPreviewFpsRange:" + fpsRange[0] + "-" + fpsRange[1]);
+        for(int i = 0; i < fpsRange.length; ++i) {
+            Log.d(TAG, "getPreviewFpsRange(" + i + "):" + fpsRange[i]);
+        }
 
-        mMediaRecorder.setCaptureRate(FRAMERATE);
-        //mMediaRecorder.setVideoFrameRate(FRAMERATE);
+        mMediaRecorder.setCaptureRate(frameRate);
 
         Log.d(TAG, "prep6");
-        // Step 6: Prepare configured MediaRecorder
         try {
             mMediaRecorder.prepare();
         } catch (IllegalStateException e) {
-            Log.d(TAG, "IllegalStateException preparing MediaRecorder: " + e.getMessage());
+            Log.e(TAG, "IllegalStateException preparing MediaRecorder: " + e.getMessage());
             releaseMediaRecorder();
             return false;
         } catch (IOException e) {
-            Log.d(TAG, "IOException preparing MediaRecorder: " + e.getMessage());
+            Log.e(TAG, "IOException preparing MediaRecorder: " + e.getMessage());
             releaseMediaRecorder();
             return false;
         }

@@ -36,6 +36,7 @@ public class CameraActivity extends Activity {
     Button captureButton;
     final public static double DEFAULT_FRAME_RATE = 1;
     private double frameRate;
+    File outputMediaFile;
 
     /** Called when the activity is first created. */
     @Override
@@ -56,6 +57,9 @@ public class CameraActivity extends Activity {
         maxFrameSecTextView.setText(Integer.toString(getMaxCaptureRate(mCamera)));
         final EditText actualFrameSecEditText = (EditText) findViewById(R.id.actualFrameSecEditText);
         actualFrameSecEditText.setText(Double.toString(DEFAULT_FRAME_RATE));
+        final EditText mediaFileNameEditText = (EditText) findViewById(R.id.mediaFileNameEditText);
+        outputMediaFile = getOutputMediaFile();
+        mediaFileNameEditText.setText(outputMediaFile.toString());
 
         captureButton.setOnClickListener(
                 new View.OnClickListener() {
@@ -70,6 +74,8 @@ public class CameraActivity extends Activity {
 
                             // inform the user that recording has stopped
                             captureButton.setText("Start");
+                            outputMediaFile = getOutputMediaFile();
+                            mediaFileNameEditText.setText(outputMediaFile.toString());
                             isRecording = false;
                         } else {
                             try {
@@ -160,7 +166,7 @@ public class CameraActivity extends Activity {
         mMediaRecorder.setProfile(profile);
         mMediaRecorder.setAudioEncoder(MediaRecorder.AudioEncoder.DEFAULT);
         // Step 4: Set output file
-        mMediaRecorder.setOutputFile(getOutputMediaFile().toString());
+        mMediaRecorder.setOutputFile(outputMediaFile.toString());
         //mMediaRecorder.setOutputFormat(MediaRecorder.OutputFormat.MPEG_4);
 
         Log.d(TAG, "prep5");

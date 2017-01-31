@@ -20,6 +20,8 @@ import java.io.IOException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 
+import static hu.rics.timelapse.R.id.actualFrameSecEditText;
+import static hu.rics.timelapse.R.id.mediaFileNameEditText;
 
 
 /**
@@ -29,7 +31,7 @@ import java.util.Date;
  */
 public class CameraActivity extends Activity {
 
-    private static final String TAG = "CameraActivity";
+    static final String TAG = "CameraActivity";
     private Camera mCamera;
     private CameraPreview mPreview;
     private MediaRecorder mMediaRecorder;
@@ -38,28 +40,37 @@ public class CameraActivity extends Activity {
     final public static double DEFAULT_FRAME_RATE = 1;
     private double frameRate;
     File outputMediaFile;
+    TextView maxFrameSecTextView;
+    EditText actualFrameSecEditText;
 
     /** Called when the activity is first created. */
     @Override
     public void onCreate(Bundle icicle) {
         super.onCreate(icicle);
+        Log.d(CameraActivity.TAG,"oncreate---------------------");
         setContentView(R.layout.activity_camera);
-
-        // Create an instance of Camera
-        mCamera = getCameraInstance();
-
         // Create our Preview view and set it as the content of our activity.
-        mPreview = new CameraPreview(this, mCamera);
+        mPreview = new CameraPreview(this);
         FrameLayout preview = (FrameLayout) findViewById(R.id.camera_preview);
         preview.addView(mPreview);
         // Add a listener to the Capture button
         captureButton = (Button) findViewById(R.id.button_capture);
-        final TextView maxFrameSecTextView = (TextView) findViewById(R.id.max2FrameSecTextView);
-        maxFrameSecTextView.setText(Integer.toString(getMaxCaptureRate(mCamera)));
-        final EditText actualFrameSecEditText = (EditText) findViewById(R.id.actualFrameSecEditText);
+        maxFrameSecTextView = (TextView) findViewById(R.id.max2FrameSecTextView);
+        //maxFrameSecTextView.setText(Integer.toString(getMaxCaptureRate(mCamera)));
+        actualFrameSecEditText = (EditText) findViewById(R.id.actualFrameSecEditText);
         actualFrameSecEditText.setText(Double.toString(DEFAULT_FRAME_RATE));
-        final EditText mediaFileNameEditText = (EditText) findViewById(R.id.mediaFileNameEditText);
+    }
+
+    @Override
+    public void onResume() {
+        super.onResume();
+
+        mCamera = Camera.open(); // attempt to get a Camera instance
+        mPreview.setCamera(mCamera);
+        mPreview.myStartPreview();
+        Log.d(CameraActivity.TAG,"onresume---------------------" + mCamera);
         outputMediaFile = getOutputMediaFile();
+        final EditText mediaFileNameEditText = (EditText) findViewById(R.id.mediaFileNameEditText);
         mediaFileNameEditText.setText(outputMediaFile.toString());
 
         captureButton.setOnClickListener(
@@ -105,17 +116,6 @@ public class CameraActivity extends Activity {
                     }
                 });
 
-    }
-
-    /** A safe way to get an instance of the Camera object. */
-    public static Camera getCameraInstance() {
-        Camera c = null;
-        try {
-            c = Camera.open(); // attempt to get a Camera instance
-        } catch (Exception e) {
-            // Camera is not available (in use or does not exist)
-        }
-        return c; // returns null if camera is unavailable
     }
 
     private File getOutputMediaFile() {
@@ -218,8 +218,8 @@ public class CameraActivity extends Activity {
     @Override
     protected void onPause() {
         super.onPause();
+        mPreview.myStopPreview();
         releaseMediaRecorder();       // if you are using MediaRecorder, release it first
-        releaseCamera();              // release the camera immediately on pause event
     }
 
     private void releaseMediaRecorder() {
@@ -227,13 +227,6 @@ public class CameraActivity extends Activity {
             mMediaRecorder.reset();   // clear recorder configuration
             mMediaRecorder.release(); // release the recorder object
             mMediaRecorder = null;
-        }
-    }
-
-    private void releaseCamera() {
-        if (mCamera != null) {
-            mCamera.release();        // release the camera for other applications
-            mCamera = null;
         }
     }
 }

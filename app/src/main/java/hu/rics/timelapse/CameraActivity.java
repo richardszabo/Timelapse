@@ -23,6 +23,7 @@ import java.util.Date;
 
 
 /**
+ * Based on https://developer.android.com/guide/topics/media/camera.html
  *
  * @author rics
  */
@@ -226,7 +227,6 @@ public class CameraActivity extends Activity {
             mMediaRecorder.reset();   // clear recorder configuration
             mMediaRecorder.release(); // release the recorder object
             mMediaRecorder = null;
-            mCamera.lock();           // lock camera for later use
         }
     }
 

@@ -1,10 +1,12 @@
 package hu.rics.timelapse;
 
 import android.app.Activity;
+import android.content.Intent;
 import android.hardware.Camera;
 import android.hardware.Camera.PictureCallback;
 import android.media.CamcorderProfile;
 import android.media.MediaRecorder;
+import android.net.Uri;
 import android.os.Bundle;
 import android.os.Environment;
 import android.util.Log;
@@ -20,6 +22,7 @@ import java.io.IOException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 
+import static android.os.Environment.getExternalStoragePublicDirectory;
 import static hu.rics.timelapse.R.id.actualFrameSecEditText;
 import static hu.rics.timelapse.R.id.mediaFileNameEditText;
 
@@ -120,7 +123,7 @@ public class CameraActivity extends Activity {
 
     private File getOutputMediaFile() {
 
-        File mediaStorageDir = getExternalFilesDir(Environment.DIRECTORY_MOVIES);
+        File mediaStorageDir = getExternalStoragePublicDirectory(Environment.DIRECTORY_MOVIES);
         // Create the storage directory if it does not exist
         if (!mediaStorageDir.exists()) {
             if (!mediaStorageDir.mkdirs()) {

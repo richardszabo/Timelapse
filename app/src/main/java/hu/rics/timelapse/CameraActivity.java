@@ -23,6 +23,7 @@ import java.text.SimpleDateFormat;
 import java.util.Date;
 
 import static android.os.Environment.getExternalStoragePublicDirectory;
+import static hu.rics.timelapse.CameraPreview.CAMERA_ID;
 import static hu.rics.timelapse.R.id.actualFrameSecEditText;
 import static hu.rics.timelapse.R.id.mediaFileNameEditText;
 
@@ -167,6 +168,7 @@ public class CameraActivity extends Activity {
         // Step 2: Set sources
         mMediaRecorder.setAudioSource(MediaRecorder.AudioSource.CAMCORDER);
         mMediaRecorder.setVideoSource(MediaRecorder.VideoSource.CAMERA);
+        mMediaRecorder.setOrientationHint(CameraPreview.getCameraDisplayOrientation(this,CAMERA_ID,mCamera));
         mMediaRecorder.setProfile(profile);
         mMediaRecorder.setAudioEncoder(MediaRecorder.AudioEncoder.DEFAULT);
         // Step 4: Set output file

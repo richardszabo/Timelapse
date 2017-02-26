@@ -81,7 +81,7 @@ public class CameraPreview extends SurfaceView implements SurfaceHolder.Callback
 
     // correct displayorientation for Ace 3 and SMT800 tab in all four direction
     // taken from here: http://stackoverflow.com/a/10218309/21047
-    public static void setCameraDisplayOrientation(Context context,
+    public static int getCameraDisplayOrientation(Context context,
                                                    int cameraId, android.hardware.Camera camera) {
         android.hardware.Camera.CameraInfo info =
                 new android.hardware.Camera.CameraInfo();
@@ -103,6 +103,11 @@ public class CameraPreview extends SurfaceView implements SurfaceHolder.Callback
         } else {  // back-facing
             result = (info.orientation - degrees + 360) % 360;
         }
-        camera.setDisplayOrientation(result);
+        return result;
+    }
+
+    public static void setCameraDisplayOrientation(Context context,
+                                                  int cameraId, android.hardware.Camera camera) {
+        camera.setDisplayOrientation(getCameraDisplayOrientation(context,cameraId,camera));
     }
 }

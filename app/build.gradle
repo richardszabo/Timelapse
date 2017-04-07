@@ -7,7 +7,7 @@ android {
     defaultConfig {
         applicationId "hu.rics.timelapse"
         minSdkVersion 15
-        targetSdkVersion 15
+        targetSdkVersion 25
     }
 
     buildTypes {
@@ -21,4 +21,5 @@ android {
 dependencies {
     compile 'com.android.support:appcompat-v7:25.1.1'
     compile project(':camera1util')
+    compile project(':permissionhandler')
 }

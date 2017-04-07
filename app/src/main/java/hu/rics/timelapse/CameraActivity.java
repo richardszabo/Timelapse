@@ -1,5 +1,6 @@
 package hu.rics.timelapse;
 
+import android.Manifest;
 import android.app.Activity;
 import android.hardware.Camera;
 import android.media.CamcorderProfile;
@@ -21,6 +22,7 @@ import java.util.Date;
 
 import hu.rics.camera1util.CameraPreview;
 import hu.rics.camera1util.MediaRecorderWrapper;
+import hu.rics.permissionhandler.PermissionHandler;
 
 import static android.os.Environment.getExternalStoragePublicDirectory;
 
@@ -40,14 +42,21 @@ public class CameraActivity extends Activity {
     File outputMediaFile;
     TextView maxFrameSecTextView;
     EditText actualFrameSecEditText;
+    PermissionHandler permissionHandler;
+    String permissions[] = {
+            Manifest.permission.CAMERA,
+            Manifest.permission.WRITE_EXTERNAL_STORAGE,
+            Manifest.permission.RECORD_AUDIO
+    };
 
     /** Called when the activity is first created. */
     @Override
     public void onCreate(Bundle icicle) {
         super.onCreate(icicle);
         setContentView(R.layout.activity_camera);
-        mediaRecorderWrapper = new MediaRecorderWrapper(this,R.id.camera_preview);
-        mediaRecorderWrapper.setTimelapse(true);
+
+        permissionHandler = new PermissionHandler(this);
+        permissionHandler.requestPermission(permissions);
 
         // Add a listener to the Capture button
         captureButton = (Button) findViewById(R.id.button_capture);
@@ -60,7 +69,7 @@ public class CameraActivity extends Activity {
     @Override
     public void onResume() {
         super.onResume();
-        if( mediaRecorderWrapper != null ) {
+        if( permissionHandler.hasRights() && mediaRecorderWrapper != null ) {
             mediaRecorderWrapper.startPreview();
         }
         outputMediaFile = getOutputMediaFile();
@@ -72,26 +81,29 @@ public class CameraActivity extends Activity {
 
                     @Override
                     public void onClick(View v) {
-                        if( mediaRecorderWrapper.isRecording() ) {
-                            mediaRecorderWrapper.stopRecording();  // stop the recording
+                        if( permissionHandler.hasRights() ) {
 
-                            // inform the user that recording has stopped
-                            captureButton.setText("Start");
-                            outputMediaFile = getOutputMediaFile();
-                            mediaFileNameEditText.setText(outputMediaFile.toString());
-                        } else {
-                            try {
-                                frameRate = Double.valueOf(actualFrameSecEditText.getText().toString());
-                                mediaRecorderWrapper.setFrameRateIfPossible(frameRate);
-                                mediaRecorderWrapper.startRecording(mediaFileNameEditText.getText().toString());
-                                if( mediaRecorderWrapper.isRecording() ) {
-                                    captureButton.setText("Stop");
+                            if (mediaRecorderWrapper.isRecording()) {
+                                mediaRecorderWrapper.stopRecording();  // stop the recording
+
+                                // inform the user that recording has stopped
+                                captureButton.setText("Start");
+                                outputMediaFile = getOutputMediaFile();
+                                mediaFileNameEditText.setText(outputMediaFile.toString());
+                            } else {
+                                try {
+                                    frameRate = Double.valueOf(actualFrameSecEditText.getText().toString());
+                                    mediaRecorderWrapper.setFrameRateIfPossible(frameRate);
+                                    mediaRecorderWrapper.startRecording(mediaFileNameEditText.getText().toString());
+                                    if (mediaRecorderWrapper.isRecording()) {
+                                        captureButton.setText("Stop");
+                                    }
+                                } catch (NumberFormatException e) {
+                                    Log.e(TAG, "Invalid frame/sec.");
+                                    Toast toast = Toast.makeText(getApplicationContext(), "Invalid frame/sec.", Toast.LENGTH_SHORT);
+                                    toast.show();
+                                    return;
                                 }
-                            } catch(NumberFormatException e) {
-                                Log.e(TAG, "Invalid frame/sec.");
-                                Toast toast = Toast.makeText(getApplicationContext(), "Invalid frame/sec.", Toast.LENGTH_SHORT);
-                                toast.show();
-                                return;
                             }
                         }
                     }
@@ -129,8 +141,19 @@ public class CameraActivity extends Activity {
     @Override
     protected void onPause() {
         super.onPause();
-        if( mediaRecorderWrapper != null ) {
+        if( permissionHandler.hasRights() && mediaRecorderWrapper != null ) {
             mediaRecorderWrapper.stopPreview();
+        }
+    }
+
+    @Override
+    public void onRequestPermissionsResult(int requestCode, String[] permissions, int[] grantResults) {
+        permissionHandler.onRequestPermissionsResult( requestCode, permissions, grantResults);
+        Log.i(TAG,"permissionHandler.hasRights():" + permissionHandler.hasRights());
+
+        if( permissionHandler.hasRights() ) {
+            mediaRecorderWrapper = new MediaRecorderWrapper(this,R.id.camera_preview);
+            mediaRecorderWrapper.setTimelapse(true);
         }
     }
 }

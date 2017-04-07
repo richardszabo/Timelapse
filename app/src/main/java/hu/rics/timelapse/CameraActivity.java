@@ -22,8 +22,10 @@ import java.io.IOException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 
+import hu.rics.camera1util.CameraPreview;
+import hu.rics.camera1util.MediaRecorderWrapper;
+
 import static android.os.Environment.getExternalStoragePublicDirectory;
-import static hu.rics.timelapse.CameraPreview.CAMERA_ID;
 import static hu.rics.timelapse.R.id.actualFrameSecEditText;
 import static hu.rics.timelapse.R.id.mediaFileNameEditText;
 
@@ -71,7 +73,7 @@ public class CameraActivity extends Activity {
 
         mCamera = Camera.open(); // attempt to get a Camera instance
         mPreview.setCamera(mCamera);
-        mPreview.myStartPreview();
+        mPreview.startPreview();
         Log.d(CameraActivity.TAG,"onresume---------------------" + mCamera);
         outputMediaFile = getOutputMediaFile();
         final EditText mediaFileNameEditText = (EditText) findViewById(R.id.mediaFileNameEditText);
@@ -168,7 +170,7 @@ public class CameraActivity extends Activity {
         // Step 2: Set sources
         mMediaRecorder.setAudioSource(MediaRecorder.AudioSource.CAMCORDER);
         mMediaRecorder.setVideoSource(MediaRecorder.VideoSource.CAMERA);
-        mMediaRecorder.setOrientationHint(CameraPreview.getCameraDisplayOrientation(this,CAMERA_ID,mCamera));
+        mMediaRecorder.setOrientationHint(CameraPreview.getCameraDisplayOrientation(this, MediaRecorderWrapper.CAMERA_ID,mCamera));
         mMediaRecorder.setProfile(profile);
         mMediaRecorder.setAudioEncoder(MediaRecorder.AudioEncoder.DEFAULT);
         // Step 4: Set output file
@@ -223,7 +225,7 @@ public class CameraActivity extends Activity {
     @Override
     protected void onPause() {
         super.onPause();
-        mPreview.myStopPreview();
+        mPreview.stopPreview();
         releaseMediaRecorder();       // if you are using MediaRecorder, release it first
     }
 

@@ -1,12 +1,9 @@
 package hu.rics.timelapse;
 
 import android.app.Activity;
-import android.content.Intent;
 import android.hardware.Camera;
-import android.hardware.Camera.PictureCallback;
 import android.media.CamcorderProfile;
 import android.media.MediaRecorder;
-import android.net.Uri;
 import android.os.Bundle;
 import android.os.Environment;
 import android.util.Log;
@@ -26,8 +23,6 @@ import hu.rics.camera1util.CameraPreview;
 import hu.rics.camera1util.MediaRecorderWrapper;
 
 import static android.os.Environment.getExternalStoragePublicDirectory;
-import static hu.rics.timelapse.R.id.actualFrameSecEditText;
-import static hu.rics.timelapse.R.id.mediaFileNameEditText;
 
 
 /**
@@ -38,10 +33,7 @@ import static hu.rics.timelapse.R.id.mediaFileNameEditText;
 public class CameraActivity extends Activity {
 
     static final String TAG = "CameraActivity";
-    private Camera mCamera;
-    private CameraPreview mPreview;
-    private MediaRecorder mMediaRecorder;
-    private boolean isRecording = false;
+    private MediaRecorderWrapper mediaRecorderWrapper;
     Button captureButton;
     final public static double DEFAULT_FRAME_RATE = 1;
     private double frameRate;
@@ -53,12 +45,10 @@ public class CameraActivity extends Activity {
     @Override
     public void onCreate(Bundle icicle) {
         super.onCreate(icicle);
-        Log.d(CameraActivity.TAG,"oncreate---------------------");
         setContentView(R.layout.activity_camera);
-        // Create our Preview view and set it as the content of our activity.
-        mPreview = new CameraPreview(this);
-        FrameLayout preview = (FrameLayout) findViewById(R.id.camera_preview);
-        preview.addView(mPreview);
+        mediaRecorderWrapper = new MediaRecorderWrapper(this,R.id.camera_preview);
+        mediaRecorderWrapper.setTimelapse(true);
+
         // Add a listener to the Capture button
         captureButton = (Button) findViewById(R.id.button_capture);
         maxFrameSecTextView = (TextView) findViewById(R.id.max2FrameSecTextView);
@@ -70,11 +60,9 @@ public class CameraActivity extends Activity {
     @Override
     public void onResume() {
         super.onResume();
-
-        mCamera = Camera.open(); // attempt to get a Camera instance
-        mPreview.setCamera(mCamera);
-        mPreview.startPreview();
-        Log.d(CameraActivity.TAG,"onresume---------------------" + mCamera);
+        if( mediaRecorderWrapper != null ) {
+            mediaRecorderWrapper.startPreview();
+        }
         outputMediaFile = getOutputMediaFile();
         final EditText mediaFileNameEditText = (EditText) findViewById(R.id.mediaFileNameEditText);
         mediaFileNameEditText.setText(outputMediaFile.toString());
@@ -84,39 +72,26 @@ public class CameraActivity extends Activity {
 
                     @Override
                     public void onClick(View v) {
-                        if (isRecording) {
-                            // stop recording and release camera
-                            mMediaRecorder.stop();  // stop the recording
-                            releaseMediaRecorder(); // release the MediaRecorder object
-                            mCamera.lock();         // take camera access back from MediaRecorder
+                        if( mediaRecorderWrapper.isRecording() ) {
+                            mediaRecorderWrapper.stopRecording();  // stop the recording
 
                             // inform the user that recording has stopped
                             captureButton.setText("Start");
                             outputMediaFile = getOutputMediaFile();
                             mediaFileNameEditText.setText(outputMediaFile.toString());
-                            isRecording = false;
                         } else {
                             try {
                                 frameRate = Double.valueOf(actualFrameSecEditText.getText().toString());
+                                mediaRecorderWrapper.setFrameRateIfPossible(frameRate);
+                                mediaRecorderWrapper.startRecording(mediaFileNameEditText.getText().toString());
+                                if( mediaRecorderWrapper.isRecording() ) {
+                                    captureButton.setText("Stop");
+                                }
                             } catch(NumberFormatException e) {
                                 Log.e(TAG, "Invalid frame/sec.");
                                 Toast toast = Toast.makeText(getApplicationContext(), "Invalid frame/sec.", Toast.LENGTH_SHORT);
                                 toast.show();
                                 return;
-                            }
-                            // initialize video camera
-                            if (prepareVideoRecorder(frameRate)) {
-                                // Camera is available and unlocked, MediaRecorder is prepared,
-                                // now you can start recording
-                                mMediaRecorder.start();
-
-                                // inform the user that recording has started
-                                captureButton.setText("Stop");
-                                isRecording = true;
-                            } else {
-                                // prepare didn't work, release the camera
-                                releaseMediaRecorder();
-                                // inform user
                             }
                         }
                     }
@@ -151,89 +126,11 @@ public class CameraActivity extends Activity {
         return fpsRange[Camera.Parameters.PREVIEW_FPS_MAX_INDEX]/1000;
     }
 
-    private boolean prepareVideoRecorder(double frameRate) {
-
-        mMediaRecorder = new MediaRecorder();
-
-        Log.d(TAG, "prep1:" + mCamera +":");
-        CamcorderProfile profile = CamcorderProfile.get(CamcorderProfile.QUALITY_TIME_LAPSE_720P );
-        //http://stackoverflow.com/a/16543157/21047
-        Camera.Parameters parameters = mCamera.getParameters();
-        parameters.setPreviewSize(profile.videoFrameWidth,profile.videoFrameHeight);
-        mCamera.setParameters(parameters);
-        
-        // Step 1: Unlock and set camera to MediaRecorder
-        mCamera.unlock();
-        mMediaRecorder.setCamera(mCamera);
-
-        Log.d(TAG, "prep2");
-        // Step 2: Set sources
-        mMediaRecorder.setAudioSource(MediaRecorder.AudioSource.CAMCORDER);
-        mMediaRecorder.setVideoSource(MediaRecorder.VideoSource.CAMERA);
-        mMediaRecorder.setOrientationHint(CameraPreview.getCameraDisplayOrientation(this, MediaRecorderWrapper.CAMERA_ID,mCamera));
-        mMediaRecorder.setProfile(profile);
-        mMediaRecorder.setAudioEncoder(MediaRecorder.AudioEncoder.DEFAULT);
-        // Step 4: Set output file
-        mMediaRecorder.setOutputFile(outputMediaFile.toString());
-        //mMediaRecorder.setOutputFormat(MediaRecorder.OutputFormat.MPEG_4);
-
-        Log.d(TAG, "prep5");
-        
-        // Step 5: Set the preview output
-        mMediaRecorder.setPreviewDisplay(mPreview.getHolder().getSurface());
-
-        int fpsRange[] = new int[2];
-
-        parameters.getPreviewFpsRange(fpsRange);
-        for(int i = 0; i < fpsRange.length; ++i) {
-            Log.d(TAG, "getPreviewFpsRange(" + i + "):" + fpsRange[i]);
-        }
-
-        mMediaRecorder.setCaptureRate(frameRate);
-
-        Log.d(TAG, "prep6");
-        try {
-            mMediaRecorder.prepare();
-        } catch (IllegalStateException e) {
-            Log.e(TAG, "IllegalStateException preparing MediaRecorder: " + e.getMessage());
-            releaseMediaRecorder();
-            return false;
-        } catch (IOException e) {
-            Log.e(TAG, "IOException preparing MediaRecorder: " + e.getMessage());
-            releaseMediaRecorder();
-            return false;
-        }
-        Log.d(TAG, "prep7");
-        return true;
-    }
-
-    protected String profileToString(CamcorderProfile cp) {
-        return "audioBitRate:" + cp.audioBitRate + ":" +
-                "audioChannels:" +cp.audioChannels + ":" +
-                "audioCodec:" + cp.audioCodec + ":" +
-                "audioSampleRate:" + cp.audioSampleRate + ":" +
-                "duration:" + cp.duration + ":" +
-                "fileFormat:" + cp.fileFormat + ":" +
-                "quality:" + cp.quality + ":" +
-                "videoBitRate:" + cp.videoBitRate + ":" +
-                "videoCodec:" + cp.videoCodec + ":" +
-                "videoFrameHeight:" + cp.videoFrameHeight + ":" +
-                "videoFrameRate:" + cp.videoFrameRate + ":" +
-                "videoFrameWidth:" + cp.videoFrameWidth +":";
-    }
-
     @Override
     protected void onPause() {
         super.onPause();
-        mPreview.stopPreview();
-        releaseMediaRecorder();       // if you are using MediaRecorder, release it first
-    }
-
-    private void releaseMediaRecorder() {
-        if (mMediaRecorder != null) {
-            mMediaRecorder.reset();   // clear recorder configuration
-            mMediaRecorder.release(); // release the recorder object
-            mMediaRecorder = null;
+        if( mediaRecorderWrapper != null ) {
+            mediaRecorderWrapper.stopPreview();
         }
     }
 }

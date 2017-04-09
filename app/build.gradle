@@ -8,6 +8,8 @@ android {
         applicationId "hu.rics.timelapse"
         minSdkVersion 15
         targetSdkVersion 25
+        versionName "v0.50.0"
+        project.ext.set("archivesBaseName", "Timelapse-" + defaultConfig.versionName);
     }
 
     buildTypes {

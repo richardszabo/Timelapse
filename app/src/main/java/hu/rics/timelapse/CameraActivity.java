@@ -69,7 +69,9 @@ public class CameraActivity extends Activity {
     @Override
     public void onResume() {
         super.onResume();
-        if( permissionHandler.hasRights() && mediaRecorderWrapper != null ) {
+
+        if( permissionHandler.hasRights() ) {
+            initMediaRecorderWrapperIfNull();
             mediaRecorderWrapper.startPreview();
         }
         outputMediaFile = getOutputMediaFile();
@@ -152,7 +154,12 @@ public class CameraActivity extends Activity {
         Log.i(TAG,"permissionHandler.hasRights():" + permissionHandler.hasRights());
 
         if( permissionHandler.hasRights() ) {
-            mediaRecorderWrapper = new MediaRecorderWrapper(this,R.id.camera_preview);
+            initMediaRecorderWrapperIfNull();
+        }
+    }
+    private void initMediaRecorderWrapperIfNull() {
+        if( mediaRecorderWrapper == null ) {
+            mediaRecorderWrapper = new MediaRecorderWrapper(this, R.id.camera_preview);
             mediaRecorderWrapper.setTimelapse(true);
         }
     }
